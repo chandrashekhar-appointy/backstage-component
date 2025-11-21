@@ -336,3 +336,4 @@ Both will appear in separate tabs in your Backstage catalog, giving you complete
 - Verify service account has necessary roles
 - Check that the JSON key is valid and not expired
 - Ensure projectId matches the annotation in catalog-info.yaml
+
