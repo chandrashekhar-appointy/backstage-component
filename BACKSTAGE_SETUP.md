@@ -178,3 +178,161 @@ Once everything is configured:
 5. **APIs Tab**: Documentation for your API endpoints
 
 The GitHub Actions integration will automatically update as new workflows run!
+
+---
+
+## Step 6: Enable Google Cloud Build Integration
+
+**Google Cloud Build** can be integrated into Backstage to show build status alongside GitHub Actions.
+
+### Installation Steps:
+
+1. **Install the Cloud Build plugin** in your Backstage frontend:
+
+In `packages/app/package.json`, add:
+```json
+{
+  "dependencies": {
+    "@backstage-community/plugin-cloudbuild": "^0.4.0"
+  }
+}
+```
+
+2. **Update catalog-info.yaml** with Cloud Build annotation:
+
+Add this annotation to your component's metadata:
+```yaml
+metadata:
+  name: demo-service
+  annotations:
+    github.com/project-slug: chandrashekhar-appointy/backstage-component
+    google.com/cloudbuild-project-slug: YOUR_GCP_PROJECT_ID
+```
+
+Replace `YOUR_GCP_PROJECT_ID` with your actual GCP project ID.
+
+3. **Configure GCP integration** in your Backstage `app-config.yaml`:
+
+```yaml
+integrations:
+  github:
+    - host: github.com
+      token: ${GITHUB_TOKEN}
+
+  gcp:
+    - projectId: YOUR_GCP_PROJECT_ID
+      # Service account key for authentication
+      # Can be a path to a JSON file or JSON string
+      clientEmail: ${GCP_CLIENT_EMAIL}
+      privateKey: ${GCP_PRIVATE_KEY}
+```
+
+4. **Set up GCP Service Account**:
+
+   a. Go to GCP Console → IAM & Admin → Service Accounts
+
+   b. Create a new service account (e.g., `backstage-cloudbuild`)
+
+   c. Grant these roles:
+      - `Cloud Build Viewer`
+      - `Service Account User`
+
+   d. Create and download a JSON key
+
+   e. Set environment variables:
+   ```bash
+   export GCP_CLIENT_EMAIL="your-service-account@project.iam.gserviceaccount.com"
+   export GCP_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+   ```
+
+5. **Add to your entity page** in `packages/app/src/components/catalog/EntityPage.tsx`:
+
+```typescript
+import {
+  EntityCloudbuildContent,
+  isCloudbuildAvailable,
+} from '@backstage-community/plugin-cloudbuild';
+
+// Add to your service entity page
+const serviceEntityPage = (
+  <EntityLayout>
+    {/* ... other tabs ... */}
+
+    <EntityLayout.Route
+      if={isGithubActionsAvailable}
+      path="/github-actions"
+      title="GitHub Actions"
+    >
+      <EntityGithubActionsContent />
+    </EntityLayout.Route>
+
+    <EntityLayout.Route
+      if={isCloudbuildAvailable}
+      path="/cloud-build"
+      title="Cloud Build"
+    >
+      <EntityCloudbuildContent />
+    </EntityLayout.Route>
+  </EntityLayout>
+);
+```
+
+6. **Install dependencies and restart**:
+```bash
+cd /path/to/your/backstage
+yarn install
+yarn dev
+```
+
+### Setting Up Cloud Build in GCP:
+
+1. **Connect your GitHub repository to Cloud Build**:
+   - Go to GCP Console → Cloud Build → Triggers
+   - Click "Connect Repository"
+   - Select "GitHub" and authenticate
+   - Choose your repository: `chandrashekhar-appointy/backstage-component`
+
+2. **Create a Build Trigger**:
+   - Name: `demo-service-ci`
+   - Event: Push to branch
+   - Branch: `^main$`
+   - Configuration: Cloud Build configuration file (yaml)
+   - Location: `/cloudbuild.yaml`
+   - Click "Create"
+
+3. **Test the trigger**:
+   - Push a commit to the main branch
+   - Cloud Build will automatically run
+   - Check GCP Console → Cloud Build → History
+
+### What You'll See in Backstage:
+
+Once Cloud Build is integrated:
+
+1. **Cloud Build Tab**: New tab in your component page
+2. **Build History**: All Cloud Build runs with timestamps
+3. **Build Status**: Success/Failure status for each build
+4. **Build Logs**: Links to view detailed logs in GCP Console
+5. **Build Triggers**: Information about configured triggers
+6. **Parallel CI/CD View**: See both GitHub Actions AND Cloud Build in the same component!
+
+### Using Both GitHub Actions and Cloud Build:
+
+You can run both simultaneously:
+- **GitHub Actions**: For GitHub-specific workflows (PR checks, release management)
+- **Cloud Build**: For GCP-specific builds (container builds, GKE deployments)
+
+Both will appear in separate tabs in your Backstage catalog, giving you complete visibility into all CI/CD pipelines!
+
+### Troubleshooting Cloud Build:
+
+**Builds not showing up?**
+- Verify `google.com/cloudbuild-project-slug` annotation is correct
+- Check GCP service account has Cloud Build Viewer role
+- Ensure GCP credentials are properly set as environment variables
+- Check Backstage frontend logs for errors
+
+**Permission errors?**
+- Verify service account has necessary roles
+- Check that the JSON key is valid and not expired
+- Ensure projectId matches the annotation in catalog-info.yaml
