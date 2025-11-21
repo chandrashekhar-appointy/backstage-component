@@ -5,6 +5,8 @@ metadata:
   description: A demo Express.js service for Backstage integration
   annotations:
     google.com/cloudbuild-project-slug: focal-psyche-460009-a5
+    google.com/cloudbuild-repo-name: backstage-component
+    google.com/cloudbuild-trigger-name: backstage-demo-trigger
     github.com/project-slug: chandrashekhar-appointy/backstage-component
     backstage.io/techdocs-ref: dir:.
   tags:
