@@ -31,8 +31,43 @@ steps:
     id: 'success-message'
     waitFor: ['build-info']
 
+  # Step 5: Generate output folder with index.html
+  - name: 'node:18'
+    entrypoint: npm
+    args: ['run', 'build']
+    id: 'generate-output'
+    waitFor: ['success-message']
+
+  # Step 6: Upload output folder to GCS bucket (private)
+  - name: 'gcr.io/cloud-builders/gsutil'
+    args:
+      - '-m'
+      - 'rsync'
+      - '-r'
+      - '-d'
+      - 'output/'
+      - 'gs://testingformemyself/'
+    id: 'upload-to-gcs'
+    waitFor: ['generate-output']
+
+  # Step 7: Send Slack notification with GCS URL
+  - name: 'curlimages/curl:latest'
+    entrypoint: 'sh'
+    args:
+      - '-c'
+      - |
+        curl -X POST ${_SLACK_WEBHOOK_URL} \
+          -H 'Content-Type: application/json' \
+          -d "{\"text\":\"✅ *Build Success!*\n🎨 Demo Service deployed\n🔗 View: https://console.cloud.google.com/storage/browser/_details/testingformemyself/index.html?project=focal-psyche-460009-a5\n📦 Build ID: ${BUILD_ID}\n🌿 Branch: ${BRANCH_NAME}\n📝 Commit: ${SHORT_SHA}\"}"
+    id: 'send-slack-notification'
+    waitFor: ['upload-to-gcs']
+
 # Build timeout
 timeout: '600s'
+
+# Substitution variables (configure these in Cloud Build trigger)
+substitutions:
+  _SLACK_WEBHOOK_URL: ''  # Configure in trigger settings
 
 # Options
 options:
