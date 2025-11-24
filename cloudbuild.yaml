@@ -57,7 +57,7 @@ steps:
     args:
       - '-c'
       - |
-        curl -X POST $SLACK_WEBHOOK_URL \
+        curl -X POST $$SLACK_WEBHOOK_URL \
           -H 'Content-Type: application/json' \
           -d "{\"text\":\"✅ *Build Success!*\n🎨 Demo Service deployed\n🔗 View: https://console.cloud.google.com/storage/browser/_details/testingformemyself/index.html?project=focal-psyche-460009-a5\n📦 Build ID: ${BUILD_ID}\n🌿 Branch: ${BRANCH_NAME}\n📝 Commit: ${SHORT_SHA}\"}"
     id: 'send-slack-notification'
