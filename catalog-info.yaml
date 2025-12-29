@@ -8,8 +8,9 @@ metadata:
     google.com/cloudbuild-region: europe-west1
     github.com/project-slug: chandrashekhar-appointy/backstage-component
     backstage.io/techdocs-ref: dir:.
-    argocd/app-name: demo-backstage-uat-apps
+    argocd/app-name: demo-backstage-uat-apps 
     argocd/instance-name: argoInstance  # Must match name in app-config.yaml
+    backstage.io/kubernetes-id: demo-service
   tags:
     - nodejs
     - express
